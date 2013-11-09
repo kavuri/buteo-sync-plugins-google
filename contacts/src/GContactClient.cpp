@@ -134,7 +134,9 @@ GContactClient::startSync()
     connect(this, SIGNAL(syncFinished(Sync::SyncStatus)),
             this, SLOT(receiveSyncFinished(Sync::SyncStatus)));
 
-    mGoogleAuth->authenticate();
+    if (iProfile.boolKey (Buteo::KEY_USE_ACCOUNTS))
+        mGoogleAuth->authenticate();
+
     return true;
 }
 
@@ -460,31 +462,34 @@ GContactClient::initConfig ()
 
     LOG_DEBUG("Initiating config...");
 
-    mAccountId = 0;
-    QString scope = "";
-    QStringList accountList = iProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
-    QStringList scopeList   = iProfile.keyValues(Buteo::KEY_REMOTE_DATABASE);
-    if (!accountList.isEmpty()) {
-        QString aId = accountList.first();
-        if (aId != NULL) {
-            mAccountId = aId.toInt();
-        }
-    } else {
-        return false;
-    }
+    if (iProfile.boolKey (Buteo::KEY_USE_ACCOUNTS) == true )
+    {
+        mAccountId = 0;
+    	QString scope = "";
+    	QStringList accountList = iProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
+    	QStringList scopeList   = iProfile.keyValues(Buteo::KEY_REMOTE_DATABASE);
+    	if (!accountList.isEmpty()) {
+        	QString aId = accountList.first();
+        	if (aId != NULL) {
+            	mAccountId = aId.toInt();
+        	}
+    	} else {
+        	return false;
+    	}
 
-    if (!scopeList.isEmpty()) {
-        scope = scopeList.first();
-    }
-    mGoogleAuth = new GAuth (mAccountId, scope);
-    if (!mGoogleAuth->init()) {
-        return false;
-    }
+    	if (!scopeList.isEmpty()) {
+        	scope = scopeList.first();
+    	}
+    	mGoogleAuth = new GAuth (mAccountId, scope);
+    	if (!mGoogleAuth->init()) {
+        	return false;
+    	}
 
-    mSyncTarget = QString("buteo-") + QString::number(mAccountId);
+    	mSyncTarget = QString("buteo-") + QString::number(mAccountId);
 
-    connect(mGoogleAuth, SIGNAL(success()), this, SLOT(start()));
-    connect(mGoogleAuth, SIGNAL(failed()), this, SLOT(authenticationError()));
+    	connect(mGoogleAuth, SIGNAL(success()), this, SLOT(start()));
+    	connect(mGoogleAuth, SIGNAL(failed()), this, SLOT(authenticationError()));
+    }
 
     mSyncDirection = iProfile.syncDirection();
 
